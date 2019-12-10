@@ -4,14 +4,14 @@ from discord.ext import commands
 import pymysql.cursors
 from pymysql import IntegrityError
 
-TOKEN = ''
+TOKEN = 'NTI2MDk2MzUzNzQzNjAxNjg2.Xe-PeA.gtiEZ8qgXnRTRal9FLwrXW1t5hA'
 client = commands.Bot(command_prefix='.')
 client.remove_command('help')
 
 conn = pymysql.connect(
         host='127.0.0.1',
-        user='',
-        password='',
+        user='afk',
+        password='afk',
         db='r6sDiscordBotAFK',
         charset='utf8'
 )
@@ -23,29 +23,29 @@ def addCustomCommand(CMD, ACTUAL_CMD, AUTHOR_ID):
     curs.execute(sql, (CMD, ACTUAL_CMD, str(AUTHOR_ID)))
     conn.commit()
 
-# delCustomCommand(cmd)
-def delCustomCommand(CMD):
-    sql = 'DELETE FROM CUSTOM_COMMAND WHERE SHORT_COMMAND=%S AND %s'
-    curs.execute(sql, (CMD, ))
+# delCustomCommand(cmd, author.id)
+def delCustomCommand(CMD, AUTHOR_ID):
+    sql = 'DELETE FROM CUSTOM_COMMAND WHERE SHORT_COMMAND=%s AND AUTHOR_ID=%s'
+    curs.execute(sql, (CMD, str(AUTHOR_ID)))
     conn.commit()
 
-# delCustomCommandAll()
-def delCustomCommandAll():
-    sql = 'DELETE FROM CUSTOM_COMMAND'
-    curs.execute(sql, )
+# delCustomCommandAll(author.id)
+def delCustomCommandAll(AUTHOR_ID):
+    sql = 'DELETE FROM CUSTOM_COMMAND WHERE AUTHOR_ID=%s'
+    curs.execute(sql, (str(AUTHOR_ID), ))
     conn.commit()
 
 # getCustomCommandList()
-def getCustomCommandList():
-    sql = 'SELECT SHORT_COMMAND, ACTUAL_COMMAND, AUTHOR_ID FROM CUSTOM_COMMAND'
-    curs.execute(sql, )
+def getCustomCommandList(AUTHOR_ID):
+    sql = 'SELECT SHORT_COMMAND, ACTUAL_COMMAND, AUTHOR_ID FROM CUSTOM_COMMAND WHERE AUTHOR_ID=%s'
+    curs.execute(sql, (str(AUTHOR_ID), ))
     conn.commit()
 
     return curs
 
-def searchCustomCommand(CMD):
-    sql = 'SELECT SHORT_COMMAND, ACTUAL_COMMAND FROM CUSTOM_COMMAND WHERE SHORT_COMMAND=%s'
-    curs.execute(sql, (CMD, ))
+def searchCustomCommand(CMD, AUTHOR_ID):
+    sql = 'SELECT SHORT_COMMAND, ACTUAL_COMMAND FROM CUSTOM_COMMAND WHERE SHORT_COMMAND=%s and AUTHOR_ID=%s'
+    curs.execute(sql, (CMD, str(AUTHOR_ID), ))
     conn.commit()
 
     return curs
@@ -66,9 +66,9 @@ async def on_message(ctx):
 
     # 사용자 임의 명령어
     if ctx.content.startswith('$'):
-        cmds = searchCustomCommand(ctx.content[1:])
+        cmds = searchCustomCommand(ctx.content[1:], ctx.author.id)
         for SHORT_COMMAND, ACTUAL_COMMAND in cmds:
-            print('{}: {}'.format(SHORT_COMMAND, ACTUAL_COMMAND))
+            print('[{}] {}: ${}'.format(ctx.channel, ctx.author, SHORT_COMMAND))
             await ctx.channel.send(ACTUAL_COMMAND)
 
     await client.process_commands(ctx)
@@ -105,9 +105,10 @@ async def deluser(ctx):
 @client.command(pass_context=True)
 @commands.has_role('AFK 잠수중')
 async def ccl(ctx):
+    author = ctx.author
     channel = ctx.channel
 
-    commandList = getCustomCommandList()
+    commandList = getCustomCommandList(author.id)
 
     embed = discord.Embed(
         colour=discord.Colour.blue()
@@ -139,20 +140,22 @@ async def addcc(ctx):
 @client.command(pass_context=True)
 @commands.has_role('AFK 잠수중')
 async def delcc(ctx):
+    author = ctx.author
     channel = ctx.channel
     content = ctx.message.content
 
     cmd = content[7:]
-    delCustomCommand(cmd)
+    delCustomCommand(cmd, author.id)
     await channel.send("{} 명령어가 성공적으로 삭제되었습니다.".format(cmd))
 
 # delCustomCommandAll
 @client.command(pass_context=True)
 @commands.has_role('AFK 잠수중')
 async def delccall(ctx):
+    author = ctx.author
     channel = ctx.channel
 
-    delCustomCommandAll()
+    delCustomCommandAll(author.id)
     await channel.send("모든 사용자 명령어가 성공적으로 삭제되었습니다.")
 
 # help
