@@ -4,16 +4,23 @@ from discord.ext import commands
 import pymysql.cursors
 from pymysql import IntegrityError
 
-TOKEN = 'NTI2MDk2MzUzNzQzNjAxNjg2.Xe-PeA.gtiEZ8qgXnRTRal9FLwrXW1t5hA'
+f = open('token.txt', 'r')
+TOKEN = f.readline()
+f.close()
+
 client = commands.Bot(command_prefix='.')
 client.remove_command('help')
 
+f = open('dbconnect.txt', 'r')
+data = f.readline()
+host, usr, pw, db, charset = data.split(' ')
+
 conn = pymysql.connect(
-        host='127.0.0.1',
-        user='afk',
-        password='afk',
-        db='r6sDiscordBotAFK',
-        charset='utf8'
+        host=host,
+        user=usr,
+        password=pw,
+        db=db,
+        charset=charset
 )
 curs = conn.cursor()
 
@@ -75,13 +82,18 @@ async def on_message(ctx):
 
 # 봇 사용자 추가
 @client.command(pass_context=True)
-@commands.has_role('가입 심사자')
+@commands.has_role('관리자')
 async def adduser(ctx):
     author = ctx.author
     content = ctx.message.content
+    guild = ctx.guild
 
     tmp = content.split(' ')
     usr = client.get_user(int(tmp[1][2:-1]))
+
+    role = discord.utils.get(guild.roles, name="AFK 잠수중")
+    member = discord.utils.get(guild.members, name=usr.name)
+    await member.add_roles(role)
 
     # DB 사용자 추가 (디스코드 고유ID(숫자), 결정권자)
     # addMember(usr.id, str(author.id))
@@ -89,13 +101,18 @@ async def adduser(ctx):
 
 # 봇 사용자 제거
 @client.command(pass_context=True)
-@commands.has_role('가입 심사자')
+@commands.has_role('관리자')
 async def deluser(ctx):
     author = ctx.author
     content = ctx.message.content
+    guild = ctx.guild
 
     tmp = content.split(' ')
     usr = client.get_user(int(tmp[1][2:-1]))
+
+    role = discord.utils.get(guild.roles, name="AFK 잠수중")
+    member = discord.utils.get(guild.members, name=usr.name)
+    await member.remove_roles(role)
 
     # DB 사용자 추가 (디스코드 고유ID(숫자), 결정권자)
     # delMember(usr.id)
@@ -123,7 +140,7 @@ async def ccl(ctx):
 # addCustomCommand <명령어>|<출력될 문구>
 @client.command(pass_context=True)
 @commands.has_role('AFK 잠수중')
-async def addcc(ctx):
+async def adc(ctx):
     author = ctx.author
     channel = ctx.channel
     content = ctx.message.content
@@ -139,7 +156,7 @@ async def addcc(ctx):
 # delCustomCommand <명령어>
 @client.command(pass_context=True)
 @commands.has_role('AFK 잠수중')
-async def delcc(ctx):
+async def dlc(ctx):
     author = ctx.author
     channel = ctx.channel
     content = ctx.message.content
@@ -151,7 +168,7 @@ async def delcc(ctx):
 # delCustomCommandAll
 @client.command(pass_context=True)
 @commands.has_role('AFK 잠수중')
-async def delccall(ctx):
+async def dlca(ctx):
     author = ctx.author
     channel = ctx.channel
 
@@ -168,13 +185,13 @@ async def help(ctx):
         colour=discord.Colour.orange()
     )
     embed.set_author(name='명령어 리스트 및 사용방법')
-    embed.add_field(name='[제작중].adduser <유저명>', value='봇 사용자 추가', inline=False)
-    embed.add_field(name='[제작중].deluser <유저명>', value='봇 사용자 제거', inline=False)
-    embed.add_field(name='[제작중].addcc <명령어>|<출력될 문구>', value='addCustomCommand 사용자 임의 명령어 추가( <명령어> 구간에 띄어쓰기 하시면 안되요 )', inline=False)
-    embed.add_field(name='.delcc <명령어>', value='delCustomCommand 사용자 임의 명령어 제거', inline=False)
-    embed.add_field(name='.delccall', value='delCustomCommandAll 모든 사용자 임의 명령어 제거', inline=False)
+    embed.add_field(name='.adduser 유저명', value='봇 사용자 추가', inline=False)
+    embed.add_field(name='.deluser 유저명', value='봇 사용자 제거', inline=False)
+    embed.add_field(name='.adc 명령어|출력될 문구', value='addCustomCommand 사용자 임의 명령어 추가( <명령어> 구간에 띄어쓰기 하시면 안되요 )', inline=False)
+    embed.add_field(name='.dlc 명령어', value='delCustomCommand 사용자 임의 명령어 제거', inline=False)
+    embed.add_field(name='.dlca', value='delCustomCommandAll 모든 사용자 임의 명령어 제거', inline=False)
     embed.add_field(name='.ccl', value='CustomCommandList 사용자 명령어 리스트 출력', inline=False)
-    embed.add_field(name='$<사용자임의명령어>', value='사용자가 지정한 대로 출력', inline=False)
+    embed.add_field(name='$사용자임의명령어', value='사용자가 지정한 대로 출력', inline=False)
     await channel.send(embed=embed)
 
 client.run(TOKEN)
