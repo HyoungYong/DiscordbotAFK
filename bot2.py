@@ -3,6 +3,7 @@ import asyncio
 from discord.ext import commands
 import pymysql.cursors
 from pymysql import IntegrityError
+import crawlingTest
 
 f = open('token.txt', 'r')
 TOKEN = f.readline()
@@ -57,13 +58,49 @@ def searchCustomCommand(CMD, AUTHOR_ID):
 
     return curs
 
+def getHighlightFromDatabase():
+    sql = 'SELECT TITLE from HIGHLIGHT_WEB'
+    curs.execute(sql)
+    conn.commit()
+
+    return curs
+
+def setHighlightFromDatabase(CURRENT_TITLE, HIGHLIGHT_WEB):
+    sql = 'UPDATE highlight_web SET title="' + HIGHLIGHT_WEB['title'] + '" WHERE title="' + CURRENT_TITLE + '"'
+    curs.execute(sql)
+    conn.commit()
+
+    return curs
+
+async def get_highlight_from_web():
+    await client.wait_until_ready()
+    # 봇실험용: 653941859391111189
+    # r6-레식뉴스: 667019493767381015
+    channel = client.get_channel(653941859391111189)
+
+    highlight_web = crawlingTest.getHighlight()
+    highlight_db = getHighlightFromDatabase()
+
+    for title in highlight_db:
+        if title != highlight_web['title']:
+            setHighlightFromDatabase(title[0], highlight_web)
+
+            embed = discord.Embed(title=highlight_web['title'], url=highlight_web['URL'], description=highlight_web['subtitle'])
+            embed.set_image(url=highlight_web['imgURL'])
+            timestamp = highlight_web['year'] + '년 ' + highlight_web['month'] + '월 ' + highlight_web['day'] + '일 업로드됨'
+            embed.set_footer(text=timestamp)
+            await channel.send(embed=embed)
+            break
+
+    while not client.is_closed():
+        await asyncio.sleep(3600)
+
 @client.event
 async def on_ready():
     print('Bot is ready')
     
     activity = discord.Game(name='.help < 사용방법')
     await client.change_presence(status=discord.Status.online, activity=activity)
-
 
 @client.event
 async def on_message(ctx):
@@ -91,7 +128,7 @@ async def adduser(ctx):
     tmp = content.split(' ')
     usr = client.get_user(int(tmp[1][2:-1]))
 
-    role = discord.utils.get(guild.roles, name="AFK 잠수중")
+    role = discord.utils.get(guild.roles, name="NEW AFK 잠수중")
     member = discord.utils.get(guild.members, name=usr.name)
     await member.add_roles(role)
 
@@ -110,7 +147,7 @@ async def deluser(ctx):
     tmp = content.split(' ')
     usr = client.get_user(int(tmp[1][2:-1]))
 
-    role = discord.utils.get(guild.roles, name="AFK 잠수중")
+    role = discord.utils.get(guild.roles, name="NEW AFK 잠수중")
     member = discord.utils.get(guild.members, name=usr.name)
     await member.remove_roles(role)
 
@@ -120,7 +157,7 @@ async def deluser(ctx):
 
 # getCC
 @client.command(pass_context=True)
-@commands.has_role('AFK 잠수중')
+@commands.has_role('NEW AFK 잠수중')
 async def ccl(ctx):
     author = ctx.author
     channel = ctx.channel
@@ -139,13 +176,13 @@ async def ccl(ctx):
 
 # addCustomCommand <명령어>|<출력될 문구>
 @client.command(pass_context=True)
-@commands.has_role('AFK 잠수중')
+@commands.has_role('NEW AFK 잠수중')
 async def adc(ctx):
     author = ctx.author
     channel = ctx.channel
     content = ctx.message.content
 
-    cmd, actualCmd = content[7:].split('|')
+    cmd, actualCmd = content[5:].split('|')
     try:
         addCustomCommand(cmd, actualCmd, author.id)
         await channel.send("{} <- {} 명령어가 성공적으로 추가되었습니다.".format(cmd, actualCmd))
@@ -155,7 +192,7 @@ async def adc(ctx):
 
 # delCustomCommand <명령어>
 @client.command(pass_context=True)
-@commands.has_role('AFK 잠수중')
+@commands.has_role('NEW AFK 잠수중')
 async def dlc(ctx):
     author = ctx.author
     channel = ctx.channel
@@ -167,7 +204,7 @@ async def dlc(ctx):
 
 # delCustomCommandAll
 @client.command(pass_context=True)
-@commands.has_role('AFK 잠수중')
+@commands.has_role('NEW AFK 잠수중')
 async def dlca(ctx):
     author = ctx.author
     channel = ctx.channel
@@ -177,7 +214,7 @@ async def dlca(ctx):
 
 # help
 @client.command(pass_context=True)
-@commands.has_role('AFK 잠수중')
+@commands.has_role('NEW AFK 잠수중')
 async def help(ctx):
     channel = ctx.channel
 
@@ -194,4 +231,15 @@ async def help(ctx):
     embed.add_field(name='$사용자임의명령어', value='사용자가 지정한 대로 출력', inline=False)
     await channel.send(embed=embed)
 
+@client.command(pass_context=True)
+@commands.has_role('관리자')
+async def getInfo(ctx):
+    guild = ctx.guild
+    content = ctx.message.content
+    channel = discord.utils.get(guild.channels, name=content[9:])
+
+    print(channel.id)
+
+
+client.loop.create_task(get_highlight_from_web())
 client.run(TOKEN)
