@@ -17,33 +17,35 @@ def getHighlight():
     }
 
     # Main Title
-    css = soup.select('div.updatesHighlight__wrapper__content > h2')
+    css = soup.select('div.updatesFeed__item__wrapper__content > h2')
     highlight['title'] = list(css)[0].text
 
     # Sub Title
-    css = soup.select('div.updatesHighlight__wrapper__content > p')
+    css = soup.select('div.updatesFeed__item__wrapper__content > p')
     highlight['subtitle'] = list(css)[0].text
 
     # imgURL
-    css = soup.select('div.updatesHighlight__wrapper__media > img')
+    css = soup.select('div.updatesFeed__item__wrapper__media > img')
     highlight['imgURL'] = list(css)[0].get('src')
 
     # URL
-    css = soup.select('div.updatesHighlight__wrapper__content > a')
+    css = soup.select('div.updatesFeed__items > a')
     highlight['URL'] = \
         'https://www.ubisoft.com' + \
         list(css)[0].get('href')
 
     # year
-    css = soup.select('div.updatesHighlight__wrapper__content > span > span.date__year')
+    css = soup.select('div.updatesFeed__item__wrapper__content > span > span.date__year')
     highlight['year'] = list(css)[0].text
 
     # month
-    css = soup.select('div.updatesHighlight__wrapper__content > span > span.date__month')
+    css = soup.select('div.updatesFeed__item__wrapper__content > span > span.date__month')
     highlight['month'] = list(css)[0].text
 
     # day
-    css = soup.select('div.updatesHighlight__wrapper__content > span > span.date__day')
+    css = soup.select('div.updatesFeed__item__wrapper__content > span > span.date__day')
     highlight['day'] = list(css)[0].text
 
     return highlight
+
+print(getHighlight())
