@@ -90,6 +90,9 @@ curs = conn.cursor()
 @bot.event
 async def on_ready():
     get_COVID19_status()
+    activity = discord.Game(name='(.도움말 ← 사용방법)')
+    await bot.change_presence(status=discord.Status.online, activity=activity)
+
     print('ready')
 @bot.event
 async def on_message(ctx):
@@ -141,7 +144,9 @@ async def 추가(ctx):
     author = ctx.author
     content = ctx.message.content
 
-    user_command, real_command = content[4:].split('/')
+    commands = content.split(' ')
+    user_command = commands[1]
+    real_command = ' '.join(commands[2:])
     try:
         add_user_command(user_command, real_command, ctx.author.id)
         await ctx.channel.send(f'[{ctx.author}] {user_command}: {real_command} 명령어 추가완료')
@@ -179,7 +184,7 @@ async def 도움말(ctx):
     embed.set_author(name='명령어 사용방법')
     embed.add_field(name='.코로나', value='코로나 현황판 보기', inline=False)
     embed.add_field(name='.코로나 지역명', value='코로나 지역 현황판 보기', inline=False)
-    embed.add_field(name='.추가 명령어/출력문구', value='사용자 명령어 등록', inline=False)
+    embed.add_field(name='.추가 명령어 출력문구(띄어쓰기가능)', value='사용자 명령어 등록', inline=False)
     embed.add_field(name='.삭제 명령어', value='사용자 명령어 삭제', inline=False)
     embed.add_field(name='.전부삭제', value='사용자 명령어 전부 삭제', inline=False)
     embed.add_field(name='.명령어', value='저장된 사용자 명령어 보기', inline=False)
